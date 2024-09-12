@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat and Mouse Meditation</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; max-width: 600px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+        .rules { text-align: left; margin-bottom: 20px; }
+        button { font-size: 2em; padding: 10px 20px; margin: 10px; }
+        #character { font-size: 4em; margin: 20px 0; }
+        #prompt { font-style: italic; margin: 20px 0; min-height: 50px; }
+        .page { display: none; }
+        .active { display: block; }
+    </style>
+</head>
+<body>
+    <div id="welcomePage" class="page active">
+        <h1>Cat and Mouse Meditation</h1>
+        <div class="rules">
+            <p>1. Tap 🐾 to start</p>
+            <p>2. Tap 🐭 when you lose focus</p>
+            <p>3. Tap 🐾 to resume focus</p>
+        </div>
+        <button onclick="startMeditation()">🐾</button>
+    </div>
+
+    <div id="meditationPage" class="page">
+        <h1>Cat and Mouse Meditation</h1>
+        <div id="character">🐱</div>
+        <div id="timer">00:00</div>
+        <button onclick="toggleFocus()" id="actionButton">🐾</button>
+        <div id="distractions"></div>
+        <button onclick="setIntention()" id="intentionButton">🎯</button>
+        <div id="prompt"></div>
+        <button onclick="goHome()">🏠</button>
+    </div>
+
+    <script>
+        var isFocused = false;
+        var distractionCount = 0;
+        var startTime;
+        var timerInterval;
+        var audioContext;
+
+        var quotes = [
+            "The present moment is filled with joy and happiness. If you are attentive, you will see it. - Thich Nhat Hanh",
+            "Be where you are; otherwise you will miss your life. - Buddha",
+            "The only way to live is by accepting each minute as an unrepeatable miracle. - Tara Brach",
+            "Mindfulness isn't difficult, we just need to remember to do it. - Sharon Salzberg",
+            "The most precious gift we can offer others is our presence. - Thich Nhat Hanh"
+        ];
+
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playTone(frequency, duration) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        function playStartSound() {
+            playTone(440, 0.5); // A4 note
+        }
+
+        function playEndSound() {
+            playTone(523.25, 0.5); // C5 note
+        }
+
+        function playDistractionSound() {
+            playTone(329.63, 0.2); // E4 note
+        }
+
+        function startMeditation() {
+            document.getElementById('welcomePage').classList.remove('active');
+            document.getElementById('meditationPage').classList.add('active');
+            resetMeditation();
+            initAudio();
+            playStartSound();
+        }
+
+        function goHome() {
+            document.getElementById('meditationPage').classList.remove('active');
+            document.getElementById('welcomePage').classList.add('active');
+            resetMeditation();
+            playEndSound();
+        }
+
+        function resetMeditation() {
+            clearInterval(timerInterval);
+            isFocused = false;
+            distractionCount = 0;
+            startTime = null;
+            document.getElementById('timer').innerText = '00:00';
+            document.getElementById('character').innerText = '🐱';
+            document.getElementById('actionButton').innerText = '🐾';
+            document.getElementById('distractions').innerText = '';
+            document.getElementById('prompt').innerText = '';
+        }
+
+        function toggleFocus() {
+            if (!startTime) {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+
+            isFocused = !isFocused;
+            document.getElementById('character').innerText = isFocused ? '🐱' : '🐭';
+            document.getElementById('actionButton').innerText = isFocused ? '🐭' : '🐾';
+            if (!isFocused) {
+                distractionCount++;
+                document.getElementById('distractions').innerText = '🐀 x ' + distractionCount;
+                playDistractionSound();
+            }
+        }
+
+        function updateTimer() {
+            var elapsedTime = Date.now() - startTime;
+            var minutes = Math.floor(elapsedTime / 60000);
+            var seconds = Math.floor((elapsedTime % 60000) / 1000);
+            document.getElementById('timer').innerText = 
+                minutes.toString().padStart(2, '0') + ':' + 
+                seconds.toString().padStart(2, '0');
+        }
+
+        function setIntention() {
+            var promptElement = document.getElementById('prompt');
+            promptElement.innerText = quotes[Math.floor(Math.random() * quotes.length)];
+        }
+    </script>
+</body>
+</html>
